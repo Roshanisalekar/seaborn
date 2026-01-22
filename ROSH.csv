@@ -1,0 +1,7 @@
+Order_ID,Date,Product,Category,Price,Quantity,Revenue,Region,Customer_Type,Rating
+1001,1/1/2024,Mobile,Electronics,15000,10,30000,North,New,4.5
+1002,1/3/2024,Laptop,Electronics,55000,20,55000,South,Returning,4.8
+1003,1/5/2024,Headphones,Accessories,2000,30,6000,East,New,4.1
+1004,1/7/2024,Smartwatch,Electronics,9000,40,18000,West,Returning,4.4
+1005,1/10/2024,Keyboard,Accessories,1500,50,6000,North,New,4
+1006,1/13/2024,Keyboard,Accessories,1500,60,6000,North,New,4
