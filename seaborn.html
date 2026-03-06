@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Beginner's Guide to Seaborn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Fira+Code&display=swap');
+        
+        :root {
+            --bg-dark: #111827;
+            --bg-light: #1f2937;
+            --primary: #38bdf8; /* Light Blue */
+            --secondary: #34d399; /* Green */
+            --accent: #f59e0b; /* Amber */
+            --text-light: #e5e7eb;
+            --text-dark: #9ca3af;
+            --border: #374151;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        .main-container {
+            max-width: 7xl;
+            margin: auto;
+            padding: 2rem;
+        }
+
+        .plot-card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .plot-card {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .plot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--primary);
+        }
+        .plot-card .plot-icon { font-size: 3rem; color: var(--accent); }
+        .plot-card .plot-title { font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem; color: var(--text-light); }
+        .plot-card .plot-desc { font-size: 0.9rem; color: var(--text-dark); }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 48rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .tabs { display: flex; border-bottom: 2px solid var(--border); }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-dark);
+            border-bottom: 3px solid transparent;
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .tab:hover { color: var(--text-light); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .tab-content { padding-top: 1.5rem; min-height: 300px; max-height: 60vh; overflow-y: auto;}
+        .content-pane { display: none; }
+        .content-pane.active { display: block; animation: fadeIn 0.5s ease; }
+        
+        .code-block {
+            background-color: var(--bg-dark);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Fira Code', monospace;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .code-block .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: var(--border);
+            color: var(--text-light);
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+         .code-block .copy-btn:hover {
+            background-color: var(--primary);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-bold">A Beginner's Guide to Seaborn</h1>
+            <p class="text-xl text-gray-400 mt-2">Learn to create powerful statistical visualizations in Python.</p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg mb-10">
+            <h2 class="text-2xl font-bold text-secondary mb-3">Sample DataFrames (with Pandas)</h2>
+            <p class="text-gray-300 mb-4">Seaborn is designed to work perfectly with Pandas DataFrames. Copy this setup code to follow the examples.</p>
+            <div class="code-block">
+                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><code>
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Sample Data 1: Monthly Data
+data_monthly = {
+    'month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    'sales': [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28],
+    'ad_spend': [1.5, 1.8, 2.0, 2.5, 3.0, 3.2, 3.5, 3.3, 3.1, 2.7, 2.4, 2.0]
+}
+df_monthly = pd.DataFrame(data_monthly)
+
+# Sample Data 2: Product Data (Tidy Format)
+data_products = {
+    'category': ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods', 
+                 'Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods'],
+    'sale_price': [150, 50, 15, 25, 75, 180, 65, 12, 30, 85],
+    'store_location': ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
+}
+df_products = pd.DataFrame(data_products)
+
+# Note: We still need 'matplotlib.pyplot as plt' for plt.show()
+</code></pre>
+            </div>
+        </div>
+
+        <div id="plot-types-container" class="plot-card-container">
+            <!-- Plot cards will be generated by JS -->
+        </div>
+    </div>
+
+    <div id="plot-modal" class="modal-overlay">
+        <div class="modal-content">
+             <div class="flex justify-between items-center">
+                <h2 id="modal-title" class="text-3xl font-bold"></h2>
+                <button id="close-modal-btn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div class="tabs mt-6">
+                <div class="tab active" data-tab="when-to-use">When to Use</div>
+                <div class="tab" data-tab="example">Code Example</div>
+                <div class="tab" data-tab="attributes">Attributes Explained</div>
+                <div class="tab" data-tab="errors">Potential Errors</div>
+            </div>
+            <div class="tab-content">
+                <div id="when-to-use-pane" class="content-pane active"></div>
+                <div id="example-pane" class="content-pane"></div>
+                <div id="attributes-pane" class="content-pane"></div>
+                <div id="errors-pane" class="content-pane"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- SEABORN PLOT DATA ---
+        const plotData = {
+            "Scatter Plot (scatterplot)": {
+                icon: 'Scatter Plot Icon', // Will be replaced by SVG
+                description: 'Observe relationships between two numeric variables.',
+                when_to_use: `
+                    <p>Use a <strong>Scatter Plot</strong> to investigate the relationship between two numerical variables. It's the best way to see correlations, clusters, and outliers. Seaborn makes it easy to add a third variable using color or style.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Comparing advertising spend vs. sales.</li>
+                        <li>Plotting a person's height vs. weight.</li>
+                        <li>Seeing if 'sale_price' is related to 'store_location' using <code>hue</code>.</li>
+                    </ul>`,
+                example: `
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    import pandas as pd
+
+                    # Data from the sample dataset
+                    data_monthly = {
+                        'month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        'sales': [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28],
+                        'ad_spend': [1.5, 1.8, 2.0, 2.5, 3.0, 3.2, 3.5, 3.3, 3.1, 2.7, 2.4, 2.0]
+                    }
+                    df_monthly = pd.DataFrame(data_monthly)
+
+                    # Create the scatter plot
+                    plt.figure(figsize=(10, 6))
+                    sns.scatterplot(data=df_monthly, x='ad_spend', y='sales')
+
+                    # Add titles and labels (using Matplotlib)
+                    plt.title('Ad Spend vs. Sales')
+                    plt.xlabel('Advertising Spend (in thousands)')
+                    plt.ylabel('Sales (in thousands)')
+                    
+                    # Display the plot
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>data=df</b>: The DataFrame containing your data. This is the first argument for most Seaborn plots.</li>
+                        <li><b>x='column_name'</b>: The string name of the column to use for the x-axis.</li>
+                        <li><b>y='column_name'</b>: The string name of the column to use for the y-axis.</li>
+                        <li><b>hue='category_column'</b>: This is Seaborn's superpower. Pass a column name (numerical or categorical) to color the points based on that column's.</li>
+                        <li><b>size='numeric_column'</b>: Varies the size of the markers based on a numerical column.</li>
+                        <li><b>style='category_column'</b>: Changes the marker shape (e.g., circles, squares) based on a categorical column.</li>
+                    </ul>`,
+                errors: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>ValueError: Could not interpret input 'column_name'</b>: This almost always means you have a typo in the column name string, or the column doesn't exist in the DataFrame.</li>
+                        <li><b>Plot doesn't appear</b>: You forgot to call <code>plt.show()</code>. Seaborn builds on Matplotlib, so it still needs <code>plt.show()</code> to display the plot.</li>
+                    </ul>`
+            },
+            "Line Plot (lineplot)": {
+                icon: '📈',
+                description: 'Show trends over a continuous interval, especially time.',
+                when_to_use: `
+                    <p>Use a <strong>Line Plot</strong> just like in Matplotlib, but Seaborn's version can automatically handle more complex data, like plotting the average and confidence interval if you have multiple data points for each x-value.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Tracking sales over months.</li>
+                        <li>Plotting stock prices.</li>
+                        <li>Showing average scores over time for different groups (using <code>hue</code>).</li>
+                    </ul>`,
+                example: `
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    import pandas as pd
+
+                    # Data from the sample dataset
+                    data_monthly = {
+                        'month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        'sales': [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28],
+                        'ad_spend': [1.5, 1.8, 2.0, 2.5, 3.0, 3.2, 3.5, 3.3, 3.1, 2.7, 2.4, 2.0]
+                    }
+                    df_monthly = pd.DataFrame(data_monthly)
+
+                    # Create the line plot
+                    plt.figure(figsize=(10, 6))
+                    # Note: Using x='month' works because the DataFrame is already sorted.
+                    sns.lineplot(data=df_monthly, x='month', y='sales', marker='o')
+
+                    # Add titles and labels
+                    plt.title('Monthly Sales Data')
+                    plt.xlabel('Month')
+                    plt.ylabel('Sales (in thousands)')
+                    
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>data=df, x='...', y='...'</b>: Same as scatterplot, these define your DataFrame and columns.</li>
+                        <li><b>hue='category_column'</b>: Will create separate colored lines for each category.</li>
+                        <li><b>style='category_column'</b>: Will create different line styles (e.g., dashed, dotted) for each category.</li>
+                        <li><b>marker='o'</b>: Adds markers (like circles) to each data point, which can improve readability.</li>
+                        <li><b>estimator='mean'</b>: By default, if there are multiple y-values for one x-value, Seaborn plots the mean. You can change this to <code>estimator='sum'</code>, etc.</li>
+                    </ul>`,
+                errors: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>Messy Plot (Lines everywhere)</b>: This often happens if your x-axis data is not sorted. For time series, ensure your DataFrame is sorted by the time column before plotting.</li>
+                        <li><b>TypeError: 'NoneType' object is not callable</b>: Often a typo, like writing <code>sns.lineplot()()</code> with extra parentheses.</li>
+                    </ul>`
+            },
+            "Bar Plot (barplot)": {
+                icon: '📊',
+                description: 'Compare quantities across different categories (with error bars).',
+                when_to_use: `
+                    <p>Use a <strong>Bar Plot</strong> to compare a numerical value across different categories. By default, Seaborn's <code>barplot</code> shows the *mean* for each category and adds error bars (representing the confidence interval).</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Comparing average sale price per product category.</li>
+                        <li>Showing average scores for different schools.</li>
+                        <li>Use <code>sns.countplot</code> if you just want to count rows in each category.</li>
+                    </ul>`,
+                example: `
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    import pandas as pd
+
+                    # Data from the sample dataset
+                    data_products = {
+                        'category': ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods', 
+                                     'Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods'],
+                        'sale_price': [150, 50, 15, 25, 75, 180, 65, 12, 30, 85],
+                        'store_location': ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
+                    }
+                    df_products = pd.DataFrame(data_products)
+
+                    # Create the bar plot
+                    plt.figure(figsize=(10, 6))
+                    sns.barplot(data=df_products, x='category', y='sale_price')
+
+                    # Add titles and labels
+                    plt.title('Average Sale Price per Category')
+                    plt.xlabel('Product Category')
+                    plt.ylabel('Average Sale Price ($)')
+                    
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>data=df, x='...', y='...'</b>: Standard data definitions.</li>
+                        <li><b>hue='category_column'</b>: Creates grouped bars for each x-category. For example, using <code>hue='store_location'</code> would show side-by-side bars for Store A and Store B for each category.</li>
+                        <li><b>palette='color_name'</b>: Seaborn has beautiful built-in color palettes. Try <code>palette='mako'</code>, <code>palette='flare'</code>, or <code>palette='pastel'</code>.</li>
+                        <li><b>estimator='mean'</b>: This is the default. You can change it to <code>estimator=sum</code> or other functions.</li>
+                    </ul>`,
+                errors: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>ValueError: Could not interpret input '...'</b>: A typo in your <code>x</code>, <code>y</code>, or <code>hue</code> column name.</li>
+                        <li><b>TypeError: unsupported operand type(s)</b>: You likely put a categorical (string) column on the y-axis and a numerical column on the x-axis. Swap them.</li>
+                    </ul>`
+            },
+            "Histogram (histplot)": {
+                icon: 'Histogram Icon', // Will be replaced by SVG
+                description: 'Display the distribution of a single numerical dataset.',
+                when_to_use: `
+                    <p>Use a <strong>Histogram</strong> to understand the distribution of a single continuous variable. Seaborn's <code>histplot</code> is very powerful, as it can easily add a smoothed density line (KDE) and stack distributions for different categories.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Understanding the distribution of sales figures.</li>
+                        <li>Visualizing the distribution of house prices.</li>
+                        <li>Comparing distributions for different groups (using <code>hue</code>).</li>
+                    </ul>`,
+                example: `
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    import pandas as pd
+
+                    # Data from the sample dataset
+                    data_products = {
+                        'category': ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods', 
+                                     'Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods'],
+                        'sale_price': [150, 50, 15, 25, 75, 180, 65, 12, 30, 85],
+                        'store_location': ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
+                    }
+                    df_products = pd.DataFrame(data_products)
+
+                    # Create the histogram with KDE
+                    plt.figure(figsize=(10, 6))
+                    sns.histplot(data=df_products, x='sale_price', bins=5, kde=True)
+
+                    # Add titles and labels
+                    plt.title('Distribution of Sale Prices')
+                    plt.xlabel('Sale Price ($)')
+                    plt.ylabel('Frequency')
+                    
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>data=df, x='...'</b>: Standard data definitions. You only need <code>x</code> (for a vertical histogram) or <code>y</code> (for a horizontal one).</li>
+                        <li><b>bins=number</b>: The number of bins to group the data into.</li>
+                        <li><b>kde=True</b>: Adds a Kernel Density Estimate line, which is a smooth curve showing the distribution shape.</li>
+                        <li><b>hue='category_column'</b>: Stacks the histograms for each category on top of each other with different colors.</li>
+                        <li><b>multiple='stack'</b>: The default when using <code>hue</code>. You can change to <code>multiple='dodge'</code> (side-by-side bars) or <code>multiple='fill'</code> (shows percentage).</li>
+                    </ul>`,
+                errors: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>Need to provide x or y</b>: You must specify <code>x='column'</code> or <code>y='column'</code>.</li>
+                        <li><b>TypeError: no numeric data to plot</b>: The column you passed to <code>x</code> (or <code>y</code>) is not numerical.</li>
+                    </ul>`
+            },
+            "Box Plot (boxplot)": {
+                icon: '📦',
+                description: 'Show data distribution and identify outliers.',
+                when_to_use: `
+                    <p>A <strong>Box Plot</strong> (or box-and-whisker plot) displays the five-number summary of a set of data: minimum, first quartile (Q1), median, third quartile (Q3), and maximum. It is fantastic for comparing distributions across multiple categories and spotting outliers (the dots).</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Comparing the range of sale prices across different product categories.</li>
+                        <li>Checking the distribution of test scores for different classes.</li>
+                    </ul>`,
+                example: `
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    import pandas as pd
+
+                    # Data from the sample dataset
+                    data_products = {
+                        'category': ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods', 
+                                     'Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods'],
+                        'sale_price': [150, 50, 15, 25, 75, 180, 65, 12, 30, 85],
+                        'store_location': ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
+                    }
+                    df_products = pd.DataFrame(data_products)
+
+                    # Create the box plot
+                    plt.figure(figsize=(10, 6))
+                    sns.boxplot(data=df_products, x='category', y='sale_price', hue='store_location')
+
+                    # Add titles and labels
+                    plt.title('Distribution of Sale Price by Category and Store')
+                    plt.xlabel('Product Category')
+                    plt.ylabel('Sale Price ($)')
+                    
+                    plt.show()`,
+                attributes: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>data=df, x='...', y='...'</b>: Standard definitions. Typically <code>x</code> is categorical and <code>y</code> is numerical.</li>
+                        <li><b>hue='category_column'</b>: Creates grouped box plots, similar to <code>barplot</code>, allowing comparison on a third variable.</li>
+                        <li><b>palette='...'</b>: Controls the color palette.</li>
+                        <li><b>order=[...]</b>: A list of strings to control the order of categories on the x-axis (e.g., <code>order=['Groceries', 'Books', 'Clothing', ...]</code>).</li>
+                    </ul>`,
+                errors: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>TypeError: no numeric data to plot</b>: You passed a string/categorical column to the <code>y</code> axis.</li>
+                        <li><b>ValueError: Could not interpret input '...'</b>: A typo in a column name.</li>
+                    </ul>`
+            },
+            "Heatmap (heatmap)": {
+                icon: '🔥',
+                description: 'Visualize 2D matrix data, like correlations.',
+                when_to_use: `
+                    <p>A <strong>Heatmap</strong> visualizes data in a 2D matrix, where values are represented by colors. It's most commonly used to visualize a correlation matrix, which shows how strongly different numerical variables are related to each other.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Visualizing a correlation matrix (e.g., <code>df.corr()</code>).</li>
+                        <li>Showing data in a calendar format.</li>
+                        <li>Any 2D grid of numbers where you want to see patterns.</li>
+                    </ul>`,
+                example: `
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    import pandas as pd
+
+                    # Data from the sample dataset
+                    data_monthly = {
+                        'month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        'sales': [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28],
+                        'ad_spend': [1.5, 1.8, 2.0, 2.5, 3.0, 3.2, 3.5, 3.3, 3.1, 2.7, 2.4, 2.0]
+                    }
+                    df_monthly = pd.DataFrame(data_monthly)
+
+                    # 1. Create the correlation matrix (data must be 2D)
+                    # We need to select numeric columns only
+                    corr_matrix = df_monthly[['sales', 'ad_spend']].corr()
+
+                    # 2. Create the heatmap
+                    plt.figure(figsize=(8, 6))
+                    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+
+                    # Add titles
+                    plt.title('Correlation Matrix of Sales and Ad Spend')
+                    
+                    plt.show()`,
+                attributes: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>data=matrix</b>: The main argument. This MUST be a 2D dataset, like a 2D array or a DataFrame (e.g., the output of <code>df.corr()</code>).</li>
+                        <li><b>annot=True</b>: Writes the data value in each cell. Very useful.</li>
+                        <li><b>cmap='...'</b>: The color map. <code>'coolwarm'</code> (blue-red) and <code>'viridis'</code> (green-yellow) are very popular.</li>
+                        <li><b>fmt='.2f'</b>: A string formatter used with <code>annot=True</code>. For example, <code>fmt='.2f'</code> would show numbers as two-decimal-place floats.</li>
+                    </ul>`,
+                errors: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>ValueError: Data must be 2-dimensional.</b>: The most common error. You passed a 1D Series (like <code>df['sales']</code>) instead of a 2D DataFrame (like <code>df.corr()</code>).</li>
+                        <li><b>TypeError: ... not supported between instances of 'str' and 'float'</b>: Your 2D data (e.g., DataFrame) contains non-numeric columns. You must select only the numeric columns *before* creating the heatmap.</li>
+                    </ul>`
+            }
+        };
+
+        const plotContainer = document.getElementById('plot-types-container');
+        const modal = document.getElementById('plot-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const tabs = document.querySelectorAll('.tab');
+        const contentPanes = document.querySelectorAll('.content-pane');
+
+        function init() {
+            // Create plot cards
+            for (const plotName in plotData) {
+                const plot = plotData[plotName];
+                const card = document.createElement('div');
+                card.className = 'plot-card';
+                
+                let iconContent;
+                if (plotName === 'Scatter Plot (scatterplot)') {
+                    iconContent = `<svg class="plot-icon inline-block" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M8 6a2 2 0 1 1-4 0a2 2 0 0 1 4 0m-2 8a2 2 0 1 0 0 4a2 2 0 0 0 0-4m-4-2a2 2 0 1 0 0 4a2 2 0 0 0 0-4m12-4a2 2 0 1 0 0-4a2 2 0 0 0 0 4m2 8a2 2 0 1 1-4 0a2 2 0 0 1 4 0m2-6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m4 4a2 2 0 1 1-4 0a2 2 0 0 1 4 0m2 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m-6-2a2 2 0 1 0 0-4a2 2 0 0 0 0 4Z"/></svg>`;
+                } else if (plotName === 'Histogram (histplot)') {
+                    iconContent = `<svg class="plot-icon inline-block" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h2v10h4V7h4v4h4v4h4v2H3zm2 12h2v2H5zm4 0h2v2H9zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>`;
+                } else {
+                    iconContent = `<div class="plot-icon">${plot.icon}</div>`;
+                }
+
+                card.innerHTML = `
+                    ${iconContent}
+                    <h3 class="plot-title">${plotName}</h3>
+                    <p class="plot-desc">${plot.description}</p>
+                `;
+                card.addEventListener('click', () => openModal(plotName));
+                plotContainer.appendChild(card);
+            }
+
+            // Modal listeners
+            closeModalBtn.addEventListener('click', () => modal.classList.remove('active'));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+            tabs.forEach(tab => tab.addEventListener('click', () => selectTab(tab.dataset.tab)));
+        }
+
+        function openModal(plotName) {
+            const plot = plotData[plotName];
+            modalTitle.textContent = plotName;
+
+            document.getElementById('when-to-use-pane').innerHTML = plot.when_to_use;
+            // Use .replace() to handle indentation in <pre> tags
+            const exampleCode = plot.example.replace(/^\s+/gm, '');
+            document.getElementById('example-pane').innerHTML = `<div class="code-block"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><code>${exampleCode}</code></pre></div>`;
+            document.getElementById('attributes-pane').innerHTML = plot.attributes;
+            document.getElementById('errors-pane').innerHTML = plot.errors;
+
+            modal.classList.add('active');
+            selectTab('when-to-use'); // Default to the first tab
+        }
+
+        function selectTab(tabName) {
+            tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === tabName));
+            contentPanes.forEach(pane => pane.classList.toggle('active', pane.id === `${tabName}-pane`));
+        }
+        
+        function copyCode(button) {
+            const pre = button.parentElement.querySelector('pre');
+            let code = pre.textContent;
+
+            // Clean up leading/trailing newlines that might result from template literals
+            code = code.trim();
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
